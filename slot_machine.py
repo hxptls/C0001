@@ -16,8 +16,9 @@ think I'm stupid. It must be caused of that the time is too late(3:31).
 Fix it when I open this code next time. *_*
 """
 import requests
+import requests.exceptions
 import logging
-import sys
+import time
 
 
 class SlotMachine(object):
@@ -29,16 +30,16 @@ class SlotMachine(object):
     current_string = ""
 
     def logger_init(self, level):
-        logger = logging.getLogger('Doorman logger')
+        logger = logging.getLogger('Logger')
         log_format = logging.Formatter(
             '%(asctime)s [%(levelname)s]%(funcName)s %(message)s',
             '%Y-%m-%d %H:%M:%S')
-        # file_handle = logging.FileHandler('./_slot_machine.log', mode='w')
         file_handle = logging.StreamHandler()
         file_handle.setFormatter(log_format)
-        file_handle.setLevel(level)
         logger.addHandler(file_handle)
+        logger.setLevel(level)  # Why I can't set level from handler! *_*
         self.logger = logger
+        self.logger.debug('Logger is inited.')
         return
 
     def string_init(self):
@@ -47,11 +48,14 @@ class SlotMachine(object):
             self.current_string += ' '
         return
 
+    IGNORED_CHARACTERS = '\"%\'()./:;I[\\]^`|{}'
+
     def increase_string(self):
         flag = 1
         for i in range(self.MAX_LENGTH):
-            t = ord(self.current_string[i])
-            t += 1
+            t = ord(self.current_string[i]) + 1
+            while chr(t) in self.IGNORED_CHARACTERS:
+                t += 1
             t = chr(t)
             if t <= '~':
                 flag = 0
@@ -65,11 +69,17 @@ class SlotMachine(object):
             return False  # No more string.
         return True
 
-    @staticmethod
-    def check_url(url):
-        r = requests.get(url)
+    def check_url(self, url):
+        try:
+            r = requests.get(url, timeout=10)
+        except requests.exceptions.RequestException:
+            self.logger.error('Failed when checking: %s' % url)
+            time.sleep(5)  # Maybe help.
+            return None
         if r.status_code == 404 and r.url != url:
             return r.url
+        if r.url == url:
+            self.logger.debug('Can not resolve url: %s' % r.url)
         return None
 
     URL_PREFIX = 'http://git.io/'
@@ -85,7 +95,7 @@ class SlotMachine(object):
 
     def __init__(self):
         super(SlotMachine, self).__init__()
-        self.logger_init(logging.DEBUG)
+        self.logger_init(logging.INFO)
         self.string_init()
         return
 
@@ -95,11 +105,15 @@ class SlotMachine(object):
             self.logger.debug('Checking %s ...' % url)
             u = self.check_url(url)
             if u is not None:
-                print(url, u)
+                print(url, '->', u)
             if not self.increase_string():
                 break
+            time.sleep(0.2)
 
 
 if __name__ == '__main__':
     s = SlotMachine()
-    s.main_loop()
+    try:
+        s.main_loop()
+    except KeyboardInterrupt:
+        print('\nCopyright (c) 2016 Hexapetalous. All rights reserved.')

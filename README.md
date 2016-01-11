@@ -7,8 +7,8 @@ A short url getter of github.com.
 |Code ID    |0001           |
 |:---------:|:--------------|
 |Author     |Hexapetalous   |
-|Date       |Jan 5, 2015    |
-|Satisfied  |No             |
+|Date       |Jan 11, 2015   |
+|Satisfied  |Yes            |
 |OS         |elementary OS 0.3.2 Freya (64-bit)                 |
 |Hardware   |Dual-Core Intel(R) Core(TM) i5-4288U CPU @ 2.60GHz |
 |Language   |Python3        |
@@ -17,19 +17,30 @@ A short url getter of github.com.
 
 ****************
 
-To explain what I did in `C0001`, I think the comments in the code is enough:
+The idea of `C0001` came from a junior of mine when he show me his github account which is a strange string. "What's that mean?" I wondered. "No meaning. Just because it has a great shortened url."
 
->The basic logic here is to try every simple string of original name into the shorten system and find which is both short enough and unused.
+That was true. [http://git.io/T](http://git.io/T). I love that.
 
->Now I finish it. And a thought came to me: why not try to visit a shortened url and find out both what its original name is and whether it has been used? I think I'm stupid. It must be caused of that the time is too late(3:31).
+So this is a program that can help you to find out which shortened url has not been used and what does it refers to.
 
->Fix it when I open this code next time. \*_\*
+    $ python3 slot_machine.py 
+    http://git.io/! -> https://github.com/joshdk/././
+    http://git.io/& -> https://github.com/zeebo/.
+    http://git.io/* -> https://github.com/joshdk/././.
+    http://git.io/1 -> https://github.com/sotarok/heala
+    http://git.io/2 -> https://github.com/easy-websocket
+    http://git.io/= -> https://github.com/justecorruptio/Snatch 
+    http://git.io/E -> https://github.com/Detry322/././
+    ...
+
+Some of them maybe useless to you. But, who knows?
 
 ****************
 
 **TODO LIST**
 
--   Just like something upon.
+-   Deal with errors and exceptions.
+-   It seems like a strange algorithm transfer a regular url to a shortened one. Figure it out.
 
 ****************
 
