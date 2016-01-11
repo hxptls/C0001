@@ -17,94 +17,89 @@ Fix it when I open this code next time. *_*
 """
 import requests
 import logging
+import sys
 
 
-MAX_LENGTH = 6  # Max trying url's length.
-MAX_URL_LENGTH = 2  # Max result url's length.
-POST_URL = 'http://git.io/create'
-POST_URL_PREFIX = 'https://github.com/'
-GET_URL_PREFIX = 'https://github.com/'
-# For easy to code I make charset unchangeable.
+class SlotMachine(object):
+    logger = None
+    # This program will try to access the url from '!!!' (33 in ASCII) to '~~~'
+    # (126 in ASCII), the length of string depends on the constant below. Many
+    # of these url are illegal, but I don't care.
+    MAX_LENGTH = 3
+    current_string = ""
 
-global_str = None
-
-
-def change_global_str():
-    global global_str
-    if global_str is None:
-        global_str = min_str()
+    def logger_init(self, level):
+        logger = logging.getLogger('Doorman logger')
+        log_format = logging.Formatter(
+            '%(asctime)s [%(levelname)s]%(funcName)s %(message)s',
+            '%Y-%m-%d %H:%M:%S')
+        # file_handle = logging.FileHandler('./_slot_machine.log', mode='w')
+        file_handle = logging.StreamHandler()
+        file_handle.setFormatter(log_format)
+        file_handle.setLevel(level)
+        logger.addHandler(file_handle)
+        self.logger = logger
         return
-    if global_str == max_str():
-        global_str = None
+
+    def string_init(self):
+        self.current_string = '!'
+        for i in range(1, self.MAX_LENGTH):
+            self.current_string += ' '
         return
-    for i in range(MAX_LENGTH):
-        new, inc = increase(global_str[i])
-        global_str = global_str[:i] + new + global_str[i + 1:]
-        if not inc:
-            break
-    return
 
+    def increase_string(self):
+        flag = 1
+        for i in range(self.MAX_LENGTH):
+            t = ord(self.current_string[i])
+            t += 1
+            t = chr(t)
+            if t <= '~':
+                flag = 0
+            else:
+                t = '!'
+            self.current_string = \
+                self.current_string[:i] + t + self.current_string[i + 1:]
+            if not flag:
+                break
+        if flag:
+            return False  # No more string.
+        return True
 
-# Define 'a' < ... < 'z' < '0' < ... < '9'
-def increase(a):
-    if a == '9':
-        return 'a', True
-    if a == 'z':
-        return '0', False
-    return chr(ord(a) + 1), False
-
-
-def max_str():
-    r = ''
-    for i in range(MAX_LENGTH):
-        r += '9'
-    return r
-
-
-def min_str():
-    r = ''
-    for i in range(MAX_LENGTH):
-        r += 'a'
-    return r
-
-
-def search_for_url(url_str, max_length):
-    post_data = {'url': url_str}
-    r = requests.post(POST_URL, data=post_data)
-    logger.info('Get shortened: ' + r.text)
-    l = len(r.text)
-    if len(r.text) > max_length:
+    @staticmethod
+    def check_url(url):
+        r = requests.get(url)
+        if r.status_code == 404 and r.url != url:
+            return r.url
         return None
-    return r.text
+
+    URL_PREFIX = 'http://git.io/'
+
+    def make_url(self, string):
+        stri = ""
+        for i in range(self.MAX_LENGTH):
+            if string[i] == ' ':
+                break
+            else:
+                stri = stri[:i] + string[i] + stri[i + 1:]
+        return self.URL_PREFIX + stri
+
+    def __init__(self):
+        super(SlotMachine, self).__init__()
+        self.logger_init(logging.DEBUG)
+        self.string_init()
+        return
+
+    def main_loop(self):
+        while True:
+            url = self.make_url(self.current_string)
+            self.logger.debug('Checking %s ...' % url)
+            u = self.check_url(url)
+            if u is not None:
+                print(url, u)
+            if not self.increase_string():
+                break
 
 
-def is_a_page_exist(url):
-    r = requests.get(url)
-    logger.info('Get status code: ' + str(r.status_code))
-    if r.status_code == 404:
-        return False
-    return True
-
-
-def main_loop():
-    logger.info('Loop start.')
-    global global_str
-    while True:
-        change_global_str()
-        logger.info('Start checking ' + global_str + '...')
-        if not global_str:
-            break
-        t = search_for_url(POST_URL_PREFIX + global_str, MAX_URL_LENGTH)
-        if t is not None and not is_a_page_exist(GET_URL_PREFIX + global_str):
-            print(str, t)
-
-
-logger = logging.getLogger('C0000_LOGGER')
-logging.basicConfig(level=logging.WARNING,
-                    format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-                    datefmt='%H:%M:%S')
-try:
-    main_loop()
-except KeyboardInterrupt:
-    print('\nProgram finished.')
-    print('Copyright (c) 2016 Hexapetalous. All rights reserved.')
+if __name__ == '__main__':
+    s = SlotMachine()
+    s.main_loop()
