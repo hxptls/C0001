@@ -48,7 +48,7 @@ class SlotMachine(object):
             self.current_string += ' '
         return
 
-    IGNORED_CHARACTERS = '\"%\'()./:;I[\\]^`|{}'
+    IGNORED_CHARACTERS = '\"%\'()./:;I[\\]^`|{}<>'
 
     def increase_string(self):
         flag = 1
